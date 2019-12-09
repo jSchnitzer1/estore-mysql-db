@@ -328,10 +328,47 @@ END;
 $$
 
 -- -----------------------------------------------------
+-- Triggers for table: customer
+-- -----------------------------------------------------
+CREATE DEFINER=CURRENT_USER TRIGGER customer_audit_insert
+BEFORE INSERT
+ON `customer`
+FOR EACH ROW
+BEGIN
+  INSERT INTO customer_audit (`id`, `operation`, `transdate`, `user`, `email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`)
+  VALUES (NEW.ID, 'I', NOW(), @username, NEW.EMAIL, NEW.PASSWORD, NEW.FIRSTNAME, NEW.LASTNAME, NEW.PHONE, NEW.ADDRESS, NEW.ROLE_ID);
+END;
+$$
+
+CREATE DEFINER=CURRENT_USER TRIGGER customer_audit_update
+BEFORE UPDATE
+ON `customer`
+FOR EACH ROW
+BEGIN
+	INSERT INTO customer_audit (`id`, `operation`, `transdate`, `user`, `email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`)
+	VALUES (NEW.ID, 'U', NOW(), @username, NEW.EMAIL, NEW.PASSWORD, NEW.FIRSTNAME, NEW.LASTNAME, NEW.PHONE, NEW.ADDRESS, NEW.ROLE_ID);
+END;
+$$
+
+CREATE DEFINER=CURRENT_USER TRIGGER customer_aud_delete
+BEFORE DELETE
+ON `customer`
+FOR EACH ROW
+BEGIN
+	INSERT INTO customer_audit (`id`, `operation`, `transdate`, `user`, `email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`)
+	VALUES (OLD.ID, 'U', NOW(), @username, OLD.EMAIL, OLD.PASSWORD, OLD.FIRSTNAME, OLD.LASTNAME, OLD.PHONE, OLD.ADDRESS, OLD.ROLE_ID);
+END;
+$$
+
+-- -----------------------------------------------------
 -- Insert some rows
 -- -----------------------------------------------------
 INSERT INTO `estore`.`role` (`id`, `type`, `description`) VALUES (1, 'admin', 'admin user');
 INSERT INTO `estore`.`role` (`id`, `type`) VALUES (2, 'user');
+
+INSERT INTO `estore`.`customer` (`email`, `password`, `firstname`, `lastname`, `role_id`) VALUES ('john1@myestore.com', '1211111w1w12dwsfdqsfawgfas`fafgvaszdfa', 'John', 'Grag', '1');
+INSERT INTO `estore`.`customer` (`email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`) VALUES ('sandeep@gmail.com', '1234', 'Sandeep', 'Guta', '071234567', 'Kungstragården 51 12345 Stockholm', '2');
+INSERT INTO `estore`.`customer` (`email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`) VALUES ('tommy@gmail.com', '5678', 'Tom', 'Campis', '079876542', 'Drotningsgatan 29 12345 Stockholm', '2');
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
