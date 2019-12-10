@@ -55,10 +55,8 @@ CREATE TABLE IF NOT EXISTS `estore_report`.`product_analysis` (
   `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
   `product_id`  INTEGER UNSIGNED NOT NULL,
   `product_name` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
-  `total_sold_per_product` INTEGER UNSIGNED NULL,
-  `total_revenue_per_product` FLOAT NULL,
-  `min_sold_product` INTEGER UNSIGNED NULL,
-  `max_sold_product` INTEGER UNSIGNED NULL,
+  `total_revenue` FLOAT NULL,
+  `total_sells` INTEGER UNSIGNED NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
