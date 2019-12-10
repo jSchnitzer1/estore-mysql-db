@@ -59,7 +59,6 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `estore`.`order` (
   `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `amount` FLOAT NOT NULL,
   `ship_address` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `tracking_number` VARCHAR(80) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NULL DEFAULT NULL,
@@ -117,6 +116,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `estore`.`order_product` (
   `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `quantity` INTEGER UNSIGNED NOT NULL,
   `order_id` INTEGER UNSIGNED NOT NULL,
   `product_id` INTEGER UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS `estore`.`order_product_audit` (
   `operation` CHAR(1) NOT NULL,
   `transdate` DATETIME NOT NULL,
   `user` VARCHAR(30) NOT NULL,
+  `quantity` INTEGER UNSIGNED NOT NULL,
   `order_id` INT NOT NULL,
   `product_id` INT NOT NULL,
   PRIMARY KEY (`audit_id`))
@@ -195,7 +196,6 @@ CREATE TABLE IF NOT EXISTS `estore`.`order_audit` (
   `operation` CHAR(1) NOT NULL,
   `transdate` DATETIME NOT NULL,
   `user` VARCHAR(30) NOT NULL,
-  `amount` FLOAT NOT NULL,
   `ship_address` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `tracking_number` VARCHAR(80) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NULL DEFAULT NULL,
@@ -264,7 +264,7 @@ DELIMITER $$
 -- Triggers for table: role
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER role_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `role`
 FOR EACH ROW
 BEGIN
@@ -274,7 +274,7 @@ END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER role_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON `role`
 FOR EACH ROW
 BEGIN
@@ -297,24 +297,17 @@ $$
 -- Triggers for table: user
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER user_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `user`
 FOR EACH ROW
 BEGIN
-  DECLARE PK_ID INTEGER UNSIGNED default 0;
-
-  SELECT AUTO_INCREMENT INTO PK_ID
-  FROM information_schema.tables
-  WHERE table_name = 'user'
-  AND table_schema = DATABASE();
-
   INSERT INTO user_audit (`id`, `operation`, `transdate`, `user`, `email`, `password`, `firstname`, `lastname`, `phone`, `address`, `role_id`)
-  VALUES (PK_ID, 'I', NOW(), @username, NEW.EMAIL, NEW.PASSWORD, NEW.FIRSTNAME, NEW.LASTNAME, NEW.PHONE, NEW.ADDRESS, NEW.ROLE_ID);
+  VALUES (NEW.ID, 'I', NOW(), @username, NEW.EMAIL, NEW.PASSWORD, NEW.FIRSTNAME, NEW.LASTNAME, NEW.PHONE, NEW.ADDRESS, NEW.ROLE_ID);
 END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER user_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON `user`
 FOR EACH ROW
 BEGIN
@@ -337,7 +330,7 @@ $$
 -- Triggers for table: product_category
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER product_category_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `product_category`
 FOR EACH ROW
 BEGIN
@@ -347,7 +340,7 @@ END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER product_category_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON `product_category`
 FOR EACH ROW
 BEGIN
@@ -370,24 +363,17 @@ $$
 -- Triggers for table: product
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER product_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON product
 FOR EACH ROW
 BEGIN
-  DECLARE PK_ID INTEGER UNSIGNED default 0;
-
-  SELECT AUTO_INCREMENT INTO PK_ID
-  FROM information_schema.tables
-  WHERE table_name = 'product'
-  AND table_schema = DATABASE();
-  
   INSERT INTO product_audit (`id`, `operation`, `transdate`, `user`, `sku`, `name`, `price`, `quantity`, `description`, `thumb_path`, `image_path`, `product_category_id`)
-  VALUES (PK_ID, 'I', NOW(), @username, NEW.SKU, NEW.NAME, NEW.PRICE, NEW.QUANTITY, NEW.DESCRIPTION, NEW.THUMB_PATH, NEW.IMAGE_PATH, NEW.PRODUCT_CATEGORY_ID);
+  VALUES (NEW.ID, 'I', NOW(), @username, NEW.SKU, NEW.NAME, NEW.PRICE, NEW.QUANTITY, NEW.DESCRIPTION, NEW.THUMB_PATH, NEW.IMAGE_PATH, NEW.PRODUCT_CATEGORY_ID);
 END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER product_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON product
 FOR EACH ROW
 BEGIN
@@ -410,7 +396,7 @@ $$
 -- Triggers for table: order_status
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER order_status_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `order_status`
 FOR EACH ROW
 BEGIN
@@ -420,7 +406,7 @@ END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER order_status_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON `order_status`
 FOR EACH ROW
 BEGIN
@@ -443,29 +429,22 @@ $$
 -- Triggers for table: order
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER order_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `order`
 FOR EACH ROW
 BEGIN
-  DECLARE PK_ID INTEGER UNSIGNED default 0;
-
-  SELECT AUTO_INCREMENT INTO PK_ID
-  FROM information_schema.tables
-  WHERE table_name = 'order'
-  AND table_schema = DATABASE();
-  
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `amount`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
-  VALUES (PK_ID, 'I', NOW(), @username, NEW.AMOUNT, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
+  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  VALUES (NEW.ID, 'I', NOW(), @username, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
 END;
 $$
 
 CREATE DEFINER=CURRENT_USER TRIGGER order_audit_update
-BEFORE UPDATE
+AFTER UPDATE
 ON `order`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `amount`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
-  VALUES (NEW.ID, 'U', NOW(), @username, NEW.AMOUNT, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
+  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  VALUES (NEW.ID, 'U', NOW(), @username, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
 END;
 $$
 
@@ -474,8 +453,8 @@ BEFORE DELETE
 ON `order`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `amount`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
-  VALUES (OLD.ID, 'D', NOW(), @username, OLD.AMOUNT, OLD.SHIP_ADDRESS, OLD.DATE, OLD.TRACKING_NUMBER, OLD.ORDER_STATUS_ID, OLD.USER_ID);
+  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  VALUES (OLD.ID, 'D', NOW(), @username, OLD.SHIP_ADDRESS, OLD.DATE, OLD.TRACKING_NUMBER, OLD.ORDER_STATUS_ID, OLD.USER_ID);
 END;
 $$
 
@@ -483,19 +462,12 @@ $$
 -- Triggers for table: order_product
 -- -----------------------------------------------------
 CREATE DEFINER=CURRENT_USER TRIGGER order_product_audit_insert
-BEFORE INSERT
+AFTER INSERT
 ON `order_product`
 FOR EACH ROW
 BEGIN
-  DECLARE PK_ID INTEGER UNSIGNED default 0;
-
-  SELECT AUTO_INCREMENT INTO PK_ID
-  FROM information_schema.tables
-  WHERE table_name = 'order_product'
-  AND table_schema = DATABASE();
-  
-  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `order_id`, `product_id`)
-  VALUES (PK_ID, 'I', NOW(), @username, NEW.ORDER_ID, NEW.PRODUCT_ID);
+  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `quantity`, `order_id`, `product_id`)
+  VALUES (NEW.ID, 'I', NOW(), @username, NEW.QUANTITY, NEW.ORDER_ID, NEW.PRODUCT_ID);
 END;
 $$
 
@@ -504,8 +476,8 @@ BEFORE UPDATE
 ON `order_product`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `order_id`, `product_id`)
-  VALUES (NEW.ID, 'U', NOW(), @username, NEW.ORDER_ID, NEW.PRODUCT_ID);
+  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `quantity`, `order_id`, `product_id`)
+  VALUES (NEW.ID, 'U', NOW(), @username, NEW.QUANTITY, NEW.ORDER_ID, NEW.PRODUCT_ID);
 END;
 $$
 
@@ -514,11 +486,10 @@ BEFORE DELETE
 ON `order_product`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `order_id`, `product_id`)
-  VALUES (OLD.ID, 'D', NOW(), @username, OLD.ORDER_ID, OLD.PRODUCT_ID);
+  INSERT INTO order_product_audit (`id`, `operation`, `transdate`, `user`, `quantity`, `order_id`, `product_id`)
+  VALUES (OLD.ID, 'D', NOW(), @username, OLD.QUANTITY, OLD.ORDER_ID, OLD.PRODUCT_ID);
 END;
 $$
-
 -- -----------------------------------------------------
 -- Insert some rows
 -- -----------------------------------------------------
@@ -534,11 +505,64 @@ INSERT INTO `estore`.`product_category` (`id`, `name`, `description`) VALUES (1,
 INSERT INTO `estore`.`product_category` (`id`, `name`) VALUES (2, 'Clothes');
 UPDATE `estore`.`product_category` SET `description` = 'Clothes Products' WHERE (`name` = 'Clothes');
 
-INSERT INTO `estore`.`product` (`sku`, `name`, `price`, `quantity`, `product_category_id`) VALUES ('12345', 'GANT Shirt', '500', '5', '2');
+INSERT INTO `estore`.`product` (`sku`, `name`, `price`, `quantity`, `product_category_id`) VALUES ('123459', 'GANT Shirt', '500', '5', '2');
+INSERT INTO `estore`.`product` (`sku`, `name`, `price`, `quantity`, `product_category_id`) VALUES ('122341', 'Samsung TV', '7000', '9', '1');
+INSERT INTO `estore`.`product` (`sku`, `name`, `price`, `quantity`, `product_category_id`) VALUES ('122341', 'Philips Vacume Machine', '2000', '6', '1');
+INSERT INTO `estore`.`product` (`sku`, `name`, `price`, `quantity`, `product_category_id`) VALUES ('123459', 'Polo Pants', '900', '20', '2');
 
 INSERT INTO `estore`.`order_status` (`id`, `type`, `description`) VALUES ('1', 'Pending', 'pending order');
 INSERT INTO `estore`.`order_status` (`id`, `type`) VALUES ('2', 'Processing');
 INSERT INTO `estore`.`order_status` (`id`, `type`) VALUES ('4', 'Shipped');
+
+INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Hanstavagen 89 145 01 Kista', '2019-01-02', 'wkfvhaewnax', '1', '2');
+INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Kungvagen 12 123 45 Stockholm', '2019-02-02', 'asfsdasdfdc', '1', '3');
+INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Tingvagen 10 194 12 Stockhom', '2019-04-01', 'dvaewsxjalnwdf', '2', '2');
+
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('1', '1', '2');
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('4', '1', '4');
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('2', '2', '4');
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('1', '3', '3');
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('5', '3', '1');
+INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('1', '2', '2');
+
+-- -----------------------------------------------------
+-- Stored Procedure to analyze data
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Stored Procedure: PerformDataAnalysis
+-- -----------------------------------------------------
+
+CREATE PROCEDURE generalDataAnalysis()
+BEGIN
+    DECLARE totalOrder INT DEFAULT 0;
+    DECLARE maxSoldProduct, minSoldProduct VARCHAR(100);
+    DECLARE totalRevenue FLOAT DEFAULT 0;
+    
+	DROP TEMPORARY TABLE IF EXISTS `estore`.`orders_products_quantity`;
+	CREATE TEMPORARY TABLE IF NOT EXISTS `estore`.`orders_products_quantity` (product_id INT, quantity INT); 
+	INSERT INTO orders_products_quantity SELECT product_id, SUM(quantity) FROM `estore`.`order_product` GROUP BY product_id;
+
+	SELECT `name` INTO maxSoldProduct FROM (
+		SELECT p.`name`, op.product_id, MAX(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore`.`orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold DESC
+	) AS T LIMIT 1;
+    
+    SELECT `name` INTO minSoldProduct FROM (
+		SELECT p.`name`, op.product_id, MIN(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore`.`orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold ASC
+	) AS T LIMIT 1;
+    
+    SELECT SUM(op.quantity * p.price)  INTO totalRevenue FROM `estore`.`order_product` AS op INNER JOIN `estore`.`product` AS p WHERE op.product_id = p.id;
+    SELECT COUNT(*) INTO totalOrder FROM `estore`.`order`;
+    
+    INSERT INTO `estore_report`.`general_analysis` (max_sold_product, min_sold_product, total_revenue, total_number_orders) 
+    VALUES (maxSoldProduct, minSoldProduct, totalRevenue, totalOrder);
+
+END$$
+
+CREATE EVENT generalDataAnalysisEvent
+    ON SCHEDULE EVERY 1 MINUTE
+    DO
+      CALL generalDataAnalysis();
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

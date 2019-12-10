@@ -15,12 +15,12 @@ USE `estore_report` ;
 -- Table `estore_report`.`general_analysis`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `estore_report`.`general_analysis` (
-  `id` INTEGER UNSIGNED NOT NULL,
-  `max_sold_product` INTEGER UNSIGNED NULL,
-  `min_sold_product` INTEGER UNSIGNED NULL,
+  `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
+  `max_sold_product` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NULL,
+  `min_sold_product` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NULL,
   `total_revenue` FLOAT NULL,
   `total_number_orders` INTEGER UNSIGNED NULL,
-  `last_updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -28,7 +28,7 @@ ENGINE = InnoDB;
 -- Table `estore_report`.`user_analysis`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `estore_report`.`user_analysis` (
-  `id` INTEGER UNSIGNED NOT NULL,
+  `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
   `user_id`  INTEGER UNSIGNED NOT NULL,
   `total_number_orders` INTEGER UNSIGNED NULL,
   `total_money_spent` FLOAT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `estore_report`.`user_analysis` (
   `total_money_spent_last_year` FLOAT NULL,
   `min_spent` FLOAT NULL,
   `max_spent` FLOAT NULL,
-  `last_updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -44,13 +44,14 @@ ENGINE = InnoDB;
 -- Table `estore_report`.`product_analysis`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `estore_report`.`product_analysis` (
-  `id` INTEGER UNSIGNED NOT NULL,
+  `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
   `product_id`  INTEGER UNSIGNED NOT NULL,
+  `product_name` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
   `total_sold_per_product` INTEGER UNSIGNED NULL,
   `total_revenue_per_product` FLOAT UNSIGNED NULL,
   `min_sold_product` INTEGER UNSIGNED NULL,
   `max_sold_product` INTEGER UNSIGNED NULL,
-  `last_updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
