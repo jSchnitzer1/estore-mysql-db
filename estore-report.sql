@@ -30,12 +30,22 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `estore_report`.`user_analysis` (
   `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
   `user_id`  INTEGER UNSIGNED NOT NULL,
+  `full_name` VARCHAR(50) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci'  NOT NULL,
   `total_number_orders` INTEGER UNSIGNED NULL,
-  `total_money_spent` FLOAT NULL,
-  `total_money_spent_last_month` FLOAT NULL,
-  `total_money_spent_last_year` FLOAT NULL,
-  `min_spent` FLOAT NULL,
-  `max_spent` FLOAT NULL,
+  `total_spent` FLOAT NULL,
+  `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+-- -----------------------------------------------------
+-- Table `estore_report`.`user_order_analysis`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `estore_report`.`user_order_analysis` (
+  `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
+  `user_id`  INTEGER UNSIGNED NOT NULL,
+  `order_id`  INTEGER UNSIGNED NOT NULL,
+  `full_name` VARCHAR(50) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci'  NOT NULL,
+  `total_spent_per_order` INTEGER UNSIGNED NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
@@ -48,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `estore_report`.`product_analysis` (
   `product_id`  INTEGER UNSIGNED NOT NULL,
   `product_name` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
   `total_sold_per_product` INTEGER UNSIGNED NULL,
-  `total_revenue_per_product` FLOAT UNSIGNED NULL,
+  `total_revenue_per_product` FLOAT NULL,
   `min_sold_product` INTEGER UNSIGNED NULL,
   `max_sold_product` INTEGER UNSIGNED NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

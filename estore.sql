@@ -539,16 +539,16 @@ BEGIN
     DECLARE maxSoldProduct, minSoldProduct VARCHAR(100);
     DECLARE totalRevenue FLOAT DEFAULT 0;
     
-	DROP TEMPORARY TABLE IF EXISTS `estore`.`orders_products_quantity`;
-	CREATE TEMPORARY TABLE IF NOT EXISTS `estore`.`orders_products_quantity` (product_id INT, quantity INT); 
+	DROP TEMPORARY TABLE IF EXISTS `estore_report`.`tmp_orders_products_quantity`;
+	CREATE TEMPORARY TABLE IF NOT EXISTS `estore_report`.`orders_products_quantity` (product_id INT, quantity INT); 
 	INSERT INTO orders_products_quantity SELECT product_id, SUM(quantity) FROM `estore`.`order_product` GROUP BY product_id;
 
 	SELECT `name` INTO maxSoldProduct FROM (
-		SELECT p.`name`, op.product_id, MAX(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore`.`orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold DESC
+		SELECT p.`name`, op.product_id, MAX(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore_report`.`tmp_orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold DESC
 	) AS T LIMIT 1;
     
     SELECT `name` INTO minSoldProduct FROM (
-		SELECT p.`name`, op.product_id, MIN(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore`.`orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold ASC
+		SELECT p.`name`, op.product_id, MIN(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore_report`.`tmp_orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold ASC
 	) AS T LIMIT 1;
     
     SELECT SUM(op.quantity * p.price)  INTO totalRevenue FROM `estore`.`order_product` AS op INNER JOIN `estore`.`product` AS p WHERE op.product_id = p.id;
@@ -556,11 +556,43 @@ BEGIN
     
     INSERT INTO `estore_report`.`general_analysis` (max_sold_product, min_sold_product, total_revenue, total_number_orders) 
     VALUES (maxSoldProduct, minSoldProduct, totalRevenue, totalOrder);
+END$$
+
+CREATE PROCEDURE userDataAnalysis()
+BEGIN
+	DROP TEMPORARY TABLE IF EXISTS `estore_report`.`tmp_user_analysis`;
+	CREATE TEMPORARY TABLE IF NOT EXISTS `estore_report`.`tmp_user_analysis` (`user_id`  INT, `full_name` VARCHAR(50), total_number_orders INT, total_spent FLOAT); 
+	DROP TEMPORARY TABLE IF EXISTS `estore_report`.`tmp_total_spent`;
+	CREATE TEMPORARY TABLE IF NOT EXISTS `estore_report`.`tmp_total_spent` (`user_id`  INT, total_spent FLOAT); 
+	
+    
+    INSERT INTO `estore_report`.`tmp_user_analysis` (user_id, full_name, total_number_orders) 
+    (SELECT u.id AS user_id, CONCAT(u.firstname, ' ', u.lastname) AS `name`, COUNT(o.id) AS total_orders  FROM 
+	`estore`.`user` AS u INNER JOIN `estore`.`order` AS o ON u.id = o.user_id 
+	GROUP BY u.id);
+    
+	INSERT INTO `estore_report`.`tmp_total_spent` (user_id, total_spent) 
+	(SELECT tua.user_id, SUM(op.quantity * p.price) FROM `estore`.`order_product` AS op 
+	INNER JOIN `estore`.`product` AS p ON op.product_id = p.id
+	INNER JOIN `estore`.`order` AS o ON op.order_id = o.id
+	INNER JOIN `estore_report`.`tmp_user_analysis` AS tua ON o.user_id = tua.user_id
+	GROUP BY tua.user_id);
+
+	UPDATE `estore_report`.`tmp_user_analysis` AS tua, `estore_report`.`tmp_total_spent` AS tts 
+	SET tua.total_spent = tts.total_spent WHERE tua.user_id = tts.user_id;
+    
+	INSERT INTO `estore_report`.`user_analysis` (user_id, full_name, total_number_orders, total_spent)
+	(SELECT user_id, full_name, total_number_orders, total_spent FROM tmp_user_analysis);
 
 END$$
 
 CREATE EVENT generalDataAnalysisEvent
-    ON SCHEDULE EVERY 1 MINUTE
+    ON SCHEDULE EVERY 1 HOUR
+    DO
+      CALL generalDataAnalysis();
+      
+CREATE EVENT userDataAnalysisEvent
+    ON SCHEDULE EVERY 1 HOUR
     DO
       CALL generalDataAnalysis();
 
