@@ -586,6 +586,15 @@ BEGIN
 
 END$$
 
+CREATE PROCEDURE orderDataAnalysis()
+BEGIN
+	INSERT INTO `estore_report`.`order_analysis` (order_id, total_spent_per_order)
+	(SELECT o.id, SUM(op.quantity * p.price) FROM `estore`.`order` AS o 
+	INNER JOIN `estore`.`order_product` AS op ON op.order_id = o.id
+	INNER JOIN `estore`.`product` AS p ON op.product_id = p.id
+	GROUP BY o.id);
+END$$
+
 CREATE EVENT generalDataAnalysisEvent
     ON SCHEDULE EVERY 1 HOUR
     DO
@@ -594,7 +603,12 @@ CREATE EVENT generalDataAnalysisEvent
 CREATE EVENT userDataAnalysisEvent
     ON SCHEDULE EVERY 1 HOUR
     DO
-      CALL generalDataAnalysis();
+      CALL userDataAnalysis();
+
+CREATE EVENT orderDataAnalysisEvent
+    ON SCHEDULE EVERY 1 HOUR
+    DO
+      CALL orderDataAnalysis();
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

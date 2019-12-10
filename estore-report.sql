@@ -38,13 +38,11 @@ CREATE TABLE IF NOT EXISTS `estore_report`.`user_analysis` (
 ENGINE = InnoDB;
 
 -- -----------------------------------------------------
--- Table `estore_report`.`user_order_analysis`
+-- Table `estore_report`.`order_analysis`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `estore_report`.`user_order_analysis` (
+CREATE TABLE IF NOT EXISTS `estore_report`.`order_analysis` (
   `id` INTEGER UNSIGNED AUTO_INCREMENT NOT NULL,
-  `user_id`  INTEGER UNSIGNED NOT NULL,
   `order_id`  INTEGER UNSIGNED NOT NULL,
-  `full_name` VARCHAR(50) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci'  NOT NULL,
   `total_spent_per_order` INTEGER UNSIGNED NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`))
