@@ -55,9 +55,9 @@ CREATE TABLE IF NOT EXISTS `estore`.`user` (
 ENGINE = InnoDB;
 
 -- -----------------------------------------------------
--- Table `estore`.`order`
+-- Table `estore`.`orders`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `estore`.`order` (
+CREATE TABLE IF NOT EXISTS `estore`.`orders` (
   `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   `ship_address` VARCHAR(100) CHARACTER SET 'latin1' COLLATE 'latin1_swedish_ci' NOT NULL,
   `date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `estore`.`order_product` (
   INDEX `fk_order_product_product1_idx` (`product_id` ASC) VISIBLE,
   CONSTRAINT `fk_order_product_order1_idx`
     FOREIGN KEY (`order_id`)
-    REFERENCES `estore`.`order` (`id`)
+    REFERENCES `estore`.`orders` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_order_product_product1_idx`
@@ -188,9 +188,9 @@ CREATE TABLE IF NOT EXISTS `estore`.`order_product_audit` (
 ENGINE = InnoDB;
 
 -- -----------------------------------------------------
--- Table `estore`.`order_audit`
+-- Table `estore`.`orders_audit`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `estore`.`order_audit` (
+CREATE TABLE IF NOT EXISTS `estore`.`orders_audit` (
   `audit_id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
   `id` INTEGER UNSIGNED NOT NULL,
   `operation` CHAR(1) NOT NULL,
@@ -428,32 +428,32 @@ $$
 -- -----------------------------------------------------
 -- Triggers for table: order
 -- -----------------------------------------------------
-CREATE DEFINER=CURRENT_USER TRIGGER order_audit_insert
+CREATE DEFINER=CURRENT_USER TRIGGER orders_audit_insert
 AFTER INSERT
-ON `order`
+ON `orders`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  INSERT INTO orders_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
   VALUES (NEW.ID, 'I', NOW(), @username, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
 END;
 $$
 
-CREATE DEFINER=CURRENT_USER TRIGGER order_audit_update
+CREATE DEFINER=CURRENT_USER TRIGGER orders_audit_update
 AFTER UPDATE
-ON `order`
+ON `orders`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  INSERT INTO orders_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
   VALUES (NEW.ID, 'U', NOW(), @username, NEW.SHIP_ADDRESS, NEW.DATE, NEW.TRACKING_NUMBER, NEW.ORDER_STATUS_ID, NEW.USER_ID);
 END;
 $$
 
-CREATE DEFINER=CURRENT_USER TRIGGER order_audit_delete
+CREATE DEFINER=CURRENT_USER TRIGGER orders_audit_delete
 BEFORE DELETE
-ON `order`
+ON `orders`
 FOR EACH ROW
 BEGIN
-  INSERT INTO order_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
+  INSERT INTO orders_audit (`id`, `operation`, `transdate`, `user`, `ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`)
   VALUES (OLD.ID, 'D', NOW(), @username, OLD.SHIP_ADDRESS, OLD.DATE, OLD.TRACKING_NUMBER, OLD.ORDER_STATUS_ID, OLD.USER_ID);
 END;
 $$
@@ -514,9 +514,9 @@ INSERT INTO `estore`.`order_status` (`id`, `type`, `description`) VALUES ('1', '
 INSERT INTO `estore`.`order_status` (`id`, `type`) VALUES ('2', 'Processing');
 INSERT INTO `estore`.`order_status` (`id`, `type`) VALUES ('4', 'Shipped');
 
-INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Hanstavagen 89 145 01 Kista', '2019-01-02', 'wkfvhaewnax', '1', '2');
-INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Kungvagen 12 123 45 Stockholm', '2019-02-02', 'asfsdasdfdc', '1', '3');
-INSERT INTO `estore`.`order` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Tingvagen 10 194 12 Stockhom', '2019-04-01', 'dvaewsxjalnwdf', '2', '2');
+INSERT INTO `estore`.`orders` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Hanstavagen 89 145 01 Kista', '2019-01-02', 'wkfvhaewnax', '1', '2');
+INSERT INTO `estore`.`orders` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Kungvagen 12 123 45 Stockholm', '2019-02-02', 'asfsdasdfdc', '1', '3');
+INSERT INTO `estore`.`orders` (`ship_address`, `date`, `tracking_number`, `order_status_id`, `user_id`) VALUES ('Tingvagen 10 194 12 Stockhom', '2019-04-01', 'dvaewsxjalnwdf', '2', '2');
 
 INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('1', '1', '2');
 INSERT INTO `estore`.`order_product` (`quantity`, `order_id`, `product_id`) VALUES ('4', '1', '4');
@@ -540,8 +540,8 @@ BEGIN
     DECLARE totalRevenue FLOAT DEFAULT 0;
     
 	DROP TEMPORARY TABLE IF EXISTS `estore_report`.`tmp_orders_products_quantity`;
-	CREATE TEMPORARY TABLE IF NOT EXISTS `estore_report`.`orders_products_quantity` (product_id INT, quantity INT); 
-	INSERT INTO orders_products_quantity SELECT product_id, SUM(quantity) FROM `estore`.`order_product` GROUP BY product_id;
+	CREATE TEMPORARY TABLE IF NOT EXISTS `estore_report`.`tmp_orders_products_quantity` (product_id INT, quantity INT); 
+	INSERT INTO `estore_report`.`tmp_orders_products_quantity` SELECT product_id, SUM(quantity) FROM `estore`.`order_product` GROUP BY product_id;
 
 	SELECT `name` INTO maxSoldProduct FROM (
 		SELECT p.`name`, op.product_id, MAX(op.quantity) AS max_sold FROM `estore`.`product` AS p INNER JOIN `estore_report`.`tmp_orders_products_quantity` AS op WHERE p.id = op.product_id GROUP BY p.id ORDER BY max_sold DESC
@@ -552,7 +552,7 @@ BEGIN
 	) AS T LIMIT 1;
     
     SELECT SUM(op.quantity * p.price)  INTO totalRevenue FROM `estore`.`order_product` AS op INNER JOIN `estore`.`product` AS p WHERE op.product_id = p.id;
-    SELECT COUNT(*) INTO totalOrder FROM `estore`.`order`;
+    SELECT COUNT(*) INTO totalOrder FROM `estore`.`orders`;
     
     INSERT INTO `estore_report`.`general_analysis` (max_sold_product, min_sold_product, total_revenue, total_number_orders) 
     VALUES (maxSoldProduct, minSoldProduct, totalRevenue, totalOrder);
@@ -568,13 +568,13 @@ BEGIN
     
     INSERT INTO `estore_report`.`tmp_user_analysis` (user_id, full_name, total_number_orders) 
     (SELECT u.id AS user_id, CONCAT(u.firstname, ' ', u.lastname) AS `name`, COUNT(o.id) AS total_orders  FROM 
-	`estore`.`user` AS u INNER JOIN `estore`.`order` AS o ON u.id = o.user_id 
+	`estore`.`user` AS u INNER JOIN `estore`.`orders` AS o ON u.id = o.user_id 
 	GROUP BY u.id);
     
 	INSERT INTO `estore_report`.`tmp_total_spent` (user_id, total_spent) 
 	(SELECT tua.user_id, SUM(op.quantity * p.price) FROM `estore`.`order_product` AS op 
 	INNER JOIN `estore`.`product` AS p ON op.product_id = p.id
-	INNER JOIN `estore`.`order` AS o ON op.order_id = o.id
+	INNER JOIN `estore`.`orders` AS o ON op.order_id = o.id
 	INNER JOIN `estore_report`.`tmp_user_analysis` AS tua ON o.user_id = tua.user_id
 	GROUP BY tua.user_id);
 
@@ -589,7 +589,7 @@ END$$
 CREATE PROCEDURE orderDataAnalysis()
 BEGIN
 	INSERT INTO `estore_report`.`order_analysis` (order_id, total_spent_per_order)
-	(SELECT o.id, SUM(op.quantity * p.price) FROM `estore`.`order` AS o 
+	(SELECT o.id, SUM(op.quantity * p.price) FROM `estore`.`orders` AS o 
 	INNER JOIN `estore`.`order_product` AS op ON op.order_id = o.id
 	INNER JOIN `estore`.`product` AS p ON op.product_id = p.id
 	GROUP BY o.id);
@@ -604,25 +604,27 @@ BEGIN
 END$$
 
 CREATE EVENT generalDataAnalysisEvent
-    ON SCHEDULE EVERY 1 HOUR
+    ON SCHEDULE EVERY 1 Hour
     DO
       CALL generalDataAnalysis();
       
 CREATE EVENT userDataAnalysisEvent
-    ON SCHEDULE EVERY 1 HOUR
+    ON SCHEDULE EVERY 1 Hour
     DO
       CALL userDataAnalysis();
 
 CREATE EVENT orderDataAnalysisEvent
-    ON SCHEDULE EVERY 1 HOUR
+    ON SCHEDULE EVERY 1 Hour
     DO
       CALL orderDataAnalysis();
       
 CREATE EVENT productDataAnalysisEvent
-    ON SCHEDULE EVERY 1 HOUR
+    ON SCHEDULE EVERY 1 Hour
     DO
       CALL productDataAnalysis();
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+-- done
